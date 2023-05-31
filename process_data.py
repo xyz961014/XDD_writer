@@ -73,6 +73,7 @@ def construct_data(doc):
                 continue
 
 
+
         # 正文
         if main_text_status:
             if re.search(r"[零一二三四五六七八九十百千万亿]+、", text):
@@ -147,7 +148,7 @@ def construct_data(doc):
 
     book_name_pinyin = pinyin(book_name, style=Style.NORMAL)
     book_name_pinyin = "".join([c[0] for c in book_name_pinyin])
-    json_filename = os.path.join("json_data", re.sub(r'[^a-z]', '', book_name_pinyin) + ".json")
+    json_filename = os.path.join("./json_data/raw", re.sub(r'[^a-z]', '', book_name_pinyin) + ".json")
     json.dump(book_data, open(json_filename, "w"), indent=4)
 
 def main(args):
