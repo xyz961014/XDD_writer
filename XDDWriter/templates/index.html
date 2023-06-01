@@ -139,37 +139,43 @@
     <input type="hidden" id="subsubchapter_recap" value="无内容。">
     <input type="hidden" id="writing_recap" value="无内容。">
     <input type="hidden" id="writing_last_paragraph" value="无内容。">
-
-    <h1>ChatGPT 许多多小说胡编</h1>
-
-    <h2>人物介绍</h2>
-    <textarea id="character_intro" placeholder="请输入人物介绍">{{ character_intro }}</textarea>
     
-    <h2>小说想法</h2>
-    <textarea id="overallIdea" placeholder="请输入整体想法">{{ idea }}</textarea>
+    <div class="container">
 
-    <h2>章节数量：<input id="chapterCountInput" type="number" value="12" min="1"></h2>
-    <button onclick="PlanChapters()" class="button">ChatGPT 生成章节</button>
+        <h1>ChatGPT 许多多小说胡编</h1>
 
-    <h2>子章节数量：<input id="subChapterCountInput" type="number" value="3" min="1"></h2>
-    <button onclick="PlanSubChapters()" class="button">ChatGPT 扩展所有章节</button>
+        <h2>人物介绍</h2>
+        <textarea id="character_intro" placeholder="请输入人物介绍">{{ character_intro }}</textarea>
+        
+        <h2>小说想法</h2>
+        <textarea id="overallIdea" placeholder="请输入整体想法">{{ idea }}</textarea>
 
-    <h2>段落数量：<input id="paragraphCountInput" type="number" value="3" min="1"></h2>
-    <button onclick="PlanSubSubChapters()" class="button">ChatGPT 扩展所有子章节</button>
-    
-    <h2>章节</h2>
-    <div id="chapterContainer"></div>
-    <button onclick="addChapter()" class="button-normal">添加章节</button>
+        <div class="input-group">
+            <h2>章节数量：<input id="chapterCountInput" class="form-control" type="number" value="12" min="1"></h2>
+            <button onclick="PlanChapters()" class="button">ChatGPT 生成章节</button>
 
-    
-    <br>
-    <br>
-    <h1>生成小说</h1>
-    <button onclick="generateNovel()" class="button">ChatGPT 生成小说段落</button>
-    <h2>当前生成段落概要</h2>
-    <textarea id="currParagraph" readonly></textarea>
-    <h2>小说正文</h2>
-    <textarea id="novelOutput"></textarea>
+            <h2>子章节数量：<input id="subChapterCountInput" class="form-control" type="number" value="3" min="1"></h2>
+            <button onclick="PlanSubChapters()" class="button">ChatGPT 扩展所有章节</button>
+
+            <h2>段落数量：<input id="paragraphCountInput" class="form-control" type="number" value="3" min="1"></h2>
+            <button onclick="PlanSubSubChapters()" class="button">ChatGPT 扩展所有子章节</button>
+        </div>
+        
+        <h2>章节</h2>
+        <div id="chapterContainer"></div>
+        <button onclick="addChapter()" class="button-normal">添加章节</button>
+
+        
+        <br>
+        <br>
+        <h1>生成小说</h1>
+        <button onclick="generateNovel()" class="button">ChatGPT 生成小说段落</button>
+        <h2>当前生成段落概要</h2>
+        <textarea id="currParagraph" readonly></textarea>
+        <h2>小说正文</h2>
+        <textarea id="novelOutput"></textarea>
+
+    </div>
 
     <script>
         function PlanChapters() {
