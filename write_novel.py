@@ -145,7 +145,8 @@ def plan_chapters(idea, character_intro, num_chapters=12):
 
     prompt = \
     f"""
-    请根据提供的想法构思主人公为许多多的小说的大纲, 尽可能设计生动有趣的情节。在创作时, 重要的是小说情节的发展, 不要进行说理和总结。
+    请根据提供的想法构思主人公为许多多的小说的大纲, 尽可能设计生动有趣的情节。
+    在创作时, 重要的是小说情节的发展, 不要进行说理和总结。
     """
     prompt += \
     f"""
@@ -321,7 +322,9 @@ def plan_subchapters(chapter_outlines, chapter_outline, recap, num_subchapters=3
 
     prompt = \
     f"""
-    请根据小说大纲和提供的章节概要扩展章节的子章节的内容概要, 尽可能设计生动有趣的情节。在扩展时, 请参考当前已创作的内容概要。这是你的记忆模块, 创作完成后, 你需要将其更新为包括你新生成内容在内的全部内容的概要, 以便更好地扩展下一个章节。在创作时, 重要的是小说情节的发展, 不要进行说理和总结。
+    请根据小说大纲和提供的章节概要扩展章节的子章节的内容概要, 子章节的内容概要需要包括更加丰富的情节, 请尽可能设计生动有趣的情节。
+    请参考当前已创作的内容概要, 确保新创作的小说情节和之前已创作的情节之间的发展符合逻辑。
+    在创作时, 重要的是小说情节的发展, 不要进行说理和总结。
     """
     prompt += \
     f"""
@@ -332,7 +335,7 @@ def plan_subchapters(chapter_outlines, chapter_outline, recap, num_subchapters=3
     f"""
     例{i_example + 1}
         章节概要: {subchapter_prompt["prompt"]}
-        输出:
+        扩展章节概要:
             """
         for i_subchapter, subchapter_summary in enumerate(subchapter_prompt["completion"]):
             prompt += \
@@ -360,24 +363,20 @@ def plan_subchapters(chapter_outlines, chapter_outline, recap, num_subchapters=3
 
     prompt += \
     f"""
-    请扩展给定章节概要生成子章节概要，并概括原有已创作的内容概要和新扩展的子章节生成新的当前已创作内容概要, 请尽可能不要遗漏情节。
-    请严格填写以下格式输出{num_subchapters}个子章节的子章节概要和当前已创作的内容概要: 每段<子章节概要>约50字; <内容概要>不超过500字;
+    请严格填写以下格式输出{num_subchapters}个子章节的子章节概要: 每段<子章节概要>约50字;
     
     扩展章节概要:"""
     for i_subchapter in range(1, num_subchapters + 1):
         prompt += \
     f"""
         {i_subchapter}. <子章节概要>"""
-    prompt += \
-    """
-    当前已创作的内容概要:
-        <内容概要>
-    """
 
     prompt += \
     f"""
-    请扩展以下章节概要生成子章节概要: 
-        {chapter_outline}
+
+    请扩展以下章节概要生成{num_subchapters}个子章节概要: 
+        章节概要:
+            {chapter_outline}
     """
 
     print(prompt)
@@ -395,19 +394,51 @@ def plan_subchapters(chapter_outlines, chapter_outline, recap, num_subchapters=3
     print(response)
 
     subchapter_outlines = []
-    new_recap = ""
-    recap_status = False
     for content in response.split("\n"):
         if re.search(r"[0-9\.]+", content):
             subchapter_outlines.append(content.strip())
 
-        if re.search(r"当前已创作的内容概要", content):
-            recap_status = True
+    prompt = \
+    f"""
+    请用一段文本概括当前已创作的内容概要和新扩展的章节概要, 生成新的当前已创作的内容概要, 请包含尽可能多的情节,  不超过500字。
+    请严格按照以下输出格式输出: <内容概要>严格不超过500字;
+
+    输出格式:
+        新的当前已创作的内容概要:
+            <内容概要>
+
+    输入如下:
+        当前已创作的内容概要:
+            {recap}
+        新扩展的章节概要:"""
+    for subchapter_outline in subchapter_outlines:
+        prompt += \
+    f"""
+            {subchapter_outline}"""
+
+    print(prompt)
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+              "role": "user", 
+              "content": prompt
+            },
+        ]
+    )
+    response = completion["choices"][0]["message"]["content"]
+    print(response)
+
+    new_recap = ""
+    for content in response.split("\n"):
+        if re.search(r"新的当前已创作的内容概要", content):
+            new_recap += content.strip()[13:]
             continue
-        if recap_status:
-            new_recap += content.strip()
-            if len(new_recap) > 500:
-                break
+
+        new_recap += content.strip()
+        if len(new_recap) > 500:
+            break
 
     return subchapter_outlines, new_recap
 
@@ -436,7 +467,9 @@ def plan_subsubchapters(chapter_outlines, subchapter_outlines, subchapter_outlin
 
     prompt = \
     f"""
-    请根据小说的子章节概要和提供的其他信息扩展子章节的各个段落的内容概要, 尽可能设计生动有趣的情节。在扩展时, 请参考当前已创作的内容概要。这是你的记忆模块, 创作完成后, 你需要将其更新为包括你新生成内容在内的全部内容的概要, 以便更好地扩展下一个子章节。在创作时, 重要的是小说情节的发展, 不要进行说理和总结。
+    请根据小说的子章节概要和提供的其他信息扩展子章节的各个段落的段落概要, 段落概要需要包括更加具体的情节, 请尽可能设计生动有趣的情节。
+    请参考当前已创作的内容概要, 确保新创作的小说情节和之前已创作的情节之间的发展符合逻辑。
+    在创作时, 重要的是小说情节的发展, 不要进行说理和总结。
     """
     prompt += \
     f"""
@@ -447,7 +480,7 @@ def plan_subsubchapters(chapter_outlines, subchapter_outlines, subchapter_outlin
     f"""
     例{i_example + 1}
         子章节概要: {subsubchapter_prompt["prompt"]}
-        输出:
+        段落概要:
             """
         for i_subsubchapter, subsubchapter_summary in enumerate(subsubchapter_prompt["completion"]):
             prompt += \
@@ -481,24 +514,19 @@ def plan_subsubchapters(chapter_outlines, subchapter_outlines, subchapter_outlin
 
     prompt += \
     f"""
-    请扩展给定子章节概要生成子章节段落概要，并概括原有已创作的内容概要和新扩展的段落生成新的当前已创作内容概要, 请尽可能不要遗漏情节。
-    请严格按照以下格式输出子章节的{num_subsubchapters}个段落的段落概要和当前已创作的内容概要: 每段<段落概要>约50字; <内容概要>不超过500字;
+    请严格按照以下格式输出子章节的{num_subsubchapters}个段落的段落概要: 每段<段落概要>约50字;
     
     段落概要:"""
     for i_subsubchapter in range(1, num_subsubchapters + 1):
         prompt += \
     f"""
         {i_subsubchapter}. <段落概要>"""
-    prompt += \
-    """
-    当前已创作的内容概要:
-        <内容概要>
-    """
 
     prompt += \
     f"""
-    请扩展以下子章节概要生成子章节段落概要和当前已创作的内容概要, 注意使用给定的格式进行输出: 
-        {subchapter_outline}
+    请扩展以下子章节概要生成子章节段落概要, 注意使用给定的格式进行输出: 
+        子章节概要:
+            {subchapter_outline}
     """
 
     print(prompt)
@@ -516,19 +544,51 @@ def plan_subsubchapters(chapter_outlines, subchapter_outlines, subchapter_outlin
     print(response)
 
     subsubchapter_outlines = []
-    new_recap = ""
-    recap_status = False
     for content in response.split("\n"):
         if re.search(r"[0-9\.]+", content):
             subsubchapter_outlines.append(content.strip())
 
-        if re.search(r"当前已创作的内容概要", content):
-            recap_status = True
+    prompt = \
+    f"""
+    请用一段文本合并概括当前已创作的内容概要和新扩展的段落概要, 生成新的当前已创作的内容概要, 请包含尽可能多的情节, 不超过500字。
+    请严格按照以下输出格式输出: <内容概要>严格不超过500字;
+
+    输出格式:
+        新的当前已创作的内容概要:
+            <内容概要>
+
+    输入如下:
+        当前已创作的内容概要:
+            {recap}
+        新扩展的段落概要:"""
+    for subsubchapter_outline in subsubchapter_outlines:
+        prompt += \
+    f"""
+            {subsubchapter_outline}"""
+
+    print(prompt)
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+              "role": "user", 
+              "content": prompt
+            },
+        ]
+    )
+    response = completion["choices"][0]["message"]["content"]
+    print(response)
+
+    new_recap = ""
+    for content in response.split("\n"):
+        if re.search(r"新的当前已创作的内容概要", content):
+            new_recap += content.strip()[11:]
             continue
-        if recap_status:
-            new_recap += content.strip()
-            if len(new_recap) > 500:
-                break
+
+        new_recap += content.strip()
+        if len(new_recap) > 500:
+            break
 
     return subsubchapter_outlines, new_recap
 
@@ -664,7 +724,7 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     请严格按照以下输出格式输出: <内容概要>严格不超过500字;
 
     输出格式:
-        当前已创作的内容概要:
+        新的当前已创作的内容概要:
             <内容概要>
 
     输入如下:
@@ -691,7 +751,7 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
 
     new_recap = ""
     for content in response.split("\n"):
-        if re.search(r"当前已创作的内容概要", content):
+        if re.search(r"新的当前已创作的内容概要", content):
             new_recap += content.strip()[11:]
             continue
 

@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>小说创作</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        h3 {
+            color: #999;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        h4 {
+            color: #ccc;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        
+        h5 {
+            color: #ddd;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 80px;
+            resize: vertical;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .indent {
+            margin-left: 30px;
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        
+        .button:hover {
+            background-color: #45a049;
+        }
+        
+        .button:focus {
+            outline: none;
+        }
+        
+        #novelOutput {
+            width: 100%;
+            height: 200px;
+            margin-top: 20px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>小说创作</h1>
+    
+    <h2>整体想法</h2>
+    <textarea id="overallIdea" placeholder="请输入整体想法"></textarea>
+    
+    <h2>章节</h2>
+    <div id="chapterContainer"></div>
+    <button onclick="addChapter()" class="button">添加章节</button>
+    
+    <h2>生成的小说</h2>
+    <textarea id="novelOutput" readonly></textarea>
+    
+    <script>
+        let chapterCount = 0;
+
+        function addChapter() {
+            chapterCount++;
+            const chapterContainer = document.getElementById("chapterContainer");
+
+            const chapterDiv = document.createElement("div");
+            chapterDiv.innerHTML = "<h3>概要</h3><textarea id='chapterSummary_" + chapterCount + "' placeholder='请输入章节概要'></textarea>";
+
+            const subChapterContainer = document.createElement("div");
+            subChapterContainer.id = "subChapterContainer_" + chapterCount;
+            subChapterContainer.classList.add("indent");
+
+            const addSubChapterButton = document.createElement("button");
+            addSubChapterButton.textContent = "添加子章节";
+            addSubChapterButton.onclick = function() { addSubChapter(chapterCount); };
+            addSubChapterButton.classList.add("button");
+
+            chapterDiv.appendChild(subChapterContainer);
+            chapterDiv.appendChild(addSubChapterButton);
+            chapterContainer.appendChild(chapterDiv);
+        }
+
+        function addSubChapter(chapterIndex) {
+            const subChapterContainer = document.getElementById("subChapterContainer_" + chapterIndex);
+            const subChapterCount = subChapterContainer.childElementCount + 1;
+
+            const subChapterDiv = document.createElement("div");
+            subChapterDiv.innerHTML = "<h4>概要</h4><textarea id='subChapterSummary_" + chapterIndex + "_" + subChapterCount + "' placeholder='请输入子章节概要'></textarea>";
+
+            const paragraphContainer = document.createElement("div");
+            paragraphContainer.id = "paragraphContainer_" + chapterIndex + "_" + subChapterCount;
+            paragraphContainer.classList.add("indent");
+
+            const addParagraphButton = document.createElement("button");
+            addParagraphButton.textContent = "添加段落";
+            addParagraphButton.onclick = function() { addParagraph(chapterIndex, subChapterCount); };
+            addParagraphButton.classList.add("button");
+
+            subChapterDiv.appendChild(paragraphContainer);
+            subChapterDiv.appendChild(addParagraphButton);
+            subChapterContainer.appendChild(subChapterDiv);
+        }
+
+        function addParagraph(chapterIndex, subChapterIndex) {
+            const paragraphContainer = document.getElementById("paragraphContainer_" + chapterIndex + "_" + subChapterIndex);
+            const paragraphCount = paragraphContainer.childElementCount + 1;
+
+            const paragraphDiv = document.createElement("div");
+            paragraphDiv.innerHTML = "<h5>概要</h5><textarea id='paragraphSummary_" + chapterIndex + "_" + subChapterIndex + "_" + paragraphCount + "' placeholder='请输入段落概要'></textarea>";
+            paragraphDiv.classList.add("indent");
+
+            paragraphContainer.appendChild(paragraphDiv);
+        }
+
+        function generateNovel() {
+            let novel = "";
+            const overallIdea = document.getElementById("overallIdea").value.trim();
+            novel += "整体想法：\n" + overallIdea + "\n\n";
+
+            const chapterContainer = document.getElementById("chapterContainer");
+            const chapters = chapterContainer.children;
+
+            for (let i = 0; i < chapters.length; i++) {
+                const chapterDiv = chapters[i];
+                const chapterIndex = i + 1;
+                const chapterSummary = document.getElementById("chapterSummary_" + chapterIndex).value.trim();
+                novel += "第 " + chapterIndex + " 章：\n概要：" + chapterSummary + "\n";
+
+                const subChapterContainer = document.getElementById("subChapterContainer_" + chapterIndex);
+                const subChapters = subChapterContainer.children;
+
+                for (let j = 0; j < subChapters.length; j++) {
+                    const subChapterDiv = subChapters[j];
+                    const subChapterIndex = j + 1;
+                    const subChapterSummary = document.getElementById("subChapterSummary_" + chapterIndex + "_" + subChapterIndex).value.trim();
+                    novel += "    子章节 " + subChapterIndex + "：\n    概要：" + subChapterSummary + "\n";
+
+                    const paragraphContainer = document.getElementById("paragraphContainer_" + chapterIndex + "_" + subChapterIndex);
+                    const paragraphs = paragraphContainer.children;
+
+                    for (let k = 0; k < paragraphs.length; k++) {
+                        const paragraphDiv = paragraphs[k];
+                        const paragraphIndex = k + 1;
+                        const paragraphSummary = document.getElementById("paragraphSummary_" + chapterIndex + "_" + subChapterIndex + "_" + paragraphIndex).value.trim();
+                        novel += "        段落 " + paragraphIndex + "：\n        概要：" + paragraphSummary + "\n";
+                    }
+                }
+            }
+
+            const novelOutput = document.getElementById("novelOutput");
+            novelOutput.value = novel;
+        }
+    </script>
+    <button onclick="generateNovel()" class="button">生成小说</button>
+</body>
+</html>
