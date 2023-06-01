@@ -653,7 +653,7 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     例子
         段落概要: 
             {writing_prompt["prompt"]}
-        输出:
+        段落内容:
             {writing_prompt["completion"]}
     """
     prompt += \

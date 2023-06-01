@@ -121,6 +121,7 @@
     <input type="hidden" id="subchapter_recap" value="无内容。">
     <input type="hidden" id="subsubchapter_recap" value="无内容。">
     <input type="hidden" id="writing_recap" value="无内容。">
+    <input type="hidden" id="writing_last_paragraph" value="无内容。">
 
     <h1>ChatGPT 许多多小说创作</h1>
 
@@ -207,7 +208,7 @@
             function AsyncPlanNextChapter(chapter_outlines, chapter_outline, recap, num_subchapters, callback, fail_callback) {
 
                 var data = {
-                    "chapter_outlines": chapter_outlines,
+                    "chapter_outlines": JSON.stringify(chapter_outlines),
                     "chapter_outline": chapter_outline,
                     "recap": recap,
                     "num_subchapters": parseInt(num_subchapters)
@@ -285,8 +286,8 @@
             function AsyncPlanNextSubChapter(chapter_outlines, subchapter_outlines, subchapter_outline, recap, num_subsubchapters, callback, fail_callback) {
 
                 var data = {
-                    "chapter_outlines": chapter_outlines,
-                    "subchapter_outlines": subchapter_outlines,
+                    "chapter_outlines": JSON.stringify(chapter_outlines),
+                    "subchapter_outlines": JSON.stringify(subchapter_outlines),
                     "subchapter_outline": subchapter_outline,
                     "recap": recap,
                     "num_subsubchapters": parseInt(num_subsubchapters)
@@ -465,6 +466,126 @@
         }
 
         function generateNovel() {
+
+            var textareaList = $('.chapter'); // 获取所有class为chapter的textarea元素
+            var chapter_outlines = []; // 存储输入内容的列表
+            textareaList.each(function() {
+                var content = $(this).val(); // 获取当前textarea的输入内容
+                chapter_outlines.push(content); // 将内容添加到列表中
+            });
+            var character_intro = document.getElementById('character_intro').value;
+
+            var recapContainer = document.getElementById("writing_recap");
+            var recap = recapContainer.value;
+            var lastParagraphContainer = document.getElementById("writing_last_paragraph");
+            var last_paragraph = lastParagraphContainer.value;
+
+            function AsyncWriteNextParagraph(chapter_outlines, character_intro, recap, last_paragraph, subsubchapter_outline, callback, fail_callback) {
+
+                var data = {
+                    "chapter_outlines": JSON.stringify(chapter_outlines),
+                    "character_intro": character_intro,
+                    "recap": recap,
+                    "last_paragraph": last_paragraph,
+                    "subsubchapter_outline": subsubchapter_outline
+                };
+
+                $.post("/write_subsubchapter", 
+                    data, 
+                    callback
+                )
+                    .fail(fail_callback);
+
+            }
+
+            function WriteNextParagraph(chapter_outlines, character_intro, recap, last_paragraph) {
+                var finished = true;
+                for (var i = 0; i < chapter_outlines.length; i++) {
+                    var chapter_outline = chapter_outlines[i];
+
+                    var textareaList = $('#subChapterContainer_' + (i + 1) + ' .subchapter');
+                    var subchapter_outlines = []; // 存储输入内容的列表
+                    textareaList.each(function() {
+                        var content = $(this).val(); // 获取当前textarea的输入内容
+                        subchapter_outlines.push(content); // 将内容添加到列表中
+                    });
+                    for (var j = 0; j < subchapter_outlines.length; j++) {
+                        var subchapter_outline = subchapter_outlines[j];
+
+                        var textareaList = $('#paragraphContainer_' + (i + 1) + '_' + (j + 1) + ' .paragraph');
+                        var subsubchapter_outlines = []; // 存储输入内容的列表
+                        textareaList.each(function() {
+                            var content = $(this).val(); // 获取当前textarea的输入内容
+                            subsubchapter_outlines.push(content); // 将内容添加到列表中
+                        });
+
+                        for (var k = 0; k < subsubchapter_outlines.length; k++) {
+                            var subsubchapter_outline = subsubchapter_outlines[k];
+                            var paragraph_textarea = $("#paragraphSummary_" + (i + 1) + "_" + (j + 1) + "_" + (k + 1));
+                                                                                                                                                   if (!paragraph_textarea.generated) {
+                                finished = false;
+                                break;
+                            }
+                        }
+                        if (!finished) {
+                            break;
+                        }
+
+                    }
+                    if (!finished) {
+                        break;
+                    }
+                }
+
+                if (!finished) {
+                    var loadingToast = Toastify({
+                        text: '第' + (i + 1) + '章 ' + '第' + (j + 1) + '节' + ' 第' + (k + 1) + '段' + ' 写作中...',
+                        duration: -1, // 通过设置duration为-1，使Toast一直显示，直到手动关闭
+                        close: false, // 隐藏关闭按钮
+                        gravity: "center", // 设置Toast显示在顶部
+                        className: "loading-toast" // 自定义样式类名
+                      }).showToast();
+
+                    const curr_paragraph = document.getElementById("currParagraph");
+                    curr_paragraph.value = subsubchapter_outline;
+
+                    AsyncWriteNextParagraph(
+                        chapter_outlines,
+                        character_intro,
+                        recap,
+                        last_paragraph,
+                        subsubchapter_outline,
+                        function(result) {
+                            var text = result["text"];
+                            var recap = result["recap"];
+
+                            const novelOutput = document.getElementById("novelOutput");
+                            novelOutput.value += text;
+
+                            var paragraph_textarea = $("#paragraphSummary_" + (i + 1) + "_" + (j + 1) + "_" + (k + 1));
+                                                                                                                                                   paragraph_textarea.attr("generated", true);
+
+                            var recapContainer = document.getElementById("writing_recap");
+                            recapContainer.value = recap;
+                            var lastParagraphContainer = document.getElementById("writing_last_paragraph");
+                            recapContainer.value = text;
+
+                            loadingToast.hideToast();
+
+                            WriteNextParagraph(chapter_outlines, character_intro, recap, last_paragraph);
+                        },
+                        function(fail_response) {
+                            loadingToast.hideToast();
+                            WriteNextParagraph(chapter_outlines, character_intro, recap, last_paragraph);
+                        }
+                    );
+
+                }
+            }
+
+            WriteNextParagraph(chapter_outlines, character_intro, recap, last_paragraph);
+
+
 
 
             const novelOutput = document.getElementById("novelOutput");

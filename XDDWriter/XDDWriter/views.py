@@ -33,6 +33,7 @@ def plan_chapters(request):
 
 def plan_subchapters(request):
     chapter_outlines = request.POST.get("chapter_outlines", "无")
+    chapter_outlines = json.loads(chapter_outlines)
     chapter_outline = request.POST.get("chapter_outline", "无")
     recap = request.POST.get("recap", "无")
     num_subchapters = request.POST.get("num_subchapters", 3)
@@ -47,7 +48,9 @@ def plan_subchapters(request):
 
 def plan_subsubchapters(request):
     chapter_outlines = request.POST.get("chapter_outlines", "无")
+    chapter_outlines = json.loads(chapter_outlines)
     subchapter_outlines = request.POST.get("subchapter_outlines", "无")
+    subchapter_outlines = json.loads(subchapter_outlines)
     subchapter_outline = request.POST.get("subchapter_outline", "无")
     recap = request.POST.get("recap", "无")
     num_subsubchapters = request.POST.get("num_subsubchapters", 3)
@@ -63,6 +66,7 @@ def plan_subsubchapters(request):
 
 def write_subsubchapter(request):
     chapter_outlines = request.POST.get("chapter_outlines", "无")
+    chapter_outlines = json.loads(chapter_outlines)
     character_intro = request.POST.get("character_intro", "无")
     recap = request.POST.get("recap", "无")
     last_paragraph = request.POST.get("last_paragraph", "无")
