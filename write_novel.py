@@ -718,14 +718,14 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     new_text = ""
     for content in response.split("\n"):
         if re.search(r"段落内容", content):
-            new_text += content[5:]
+            new_text += content[5:] + "\n"
             continue
 
         if re.search(r"续写上一段落", content):
-            new_text += content[7:]
+            new_text += content[7:] + "\n"
             continue
 
-        new_text += content
+        new_text += content + "\n"
         if len(new_text) > 500:
             break
 
