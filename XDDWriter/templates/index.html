@@ -148,9 +148,9 @@
     <br>
     <br>
     <h1>生成小说</h1>
+    <button onclick="generateNovel()" class="button">ChatGPT 生成小说段落</button>
     <h2>当前生成段落概要</h2>
     <textarea id="currParagraph" readonly></textarea>
-    <button onclick="generateNovel()" class="button">ChatGPT 生成小说段落</button>
     <h2>小说正文</h2>
     <textarea id="novelOutput"></textarea>
 
@@ -380,7 +380,7 @@
             const chapterCount = chapterContainer.childElementCount + 1;
 
             const chapterDiv = document.createElement("div");
-            chapterDiv.innerHTML = "<h3>第 " + chapterCount + " 章</h3><textarea id='chapterSummary_" + chapterCount + "' class='chapter' placeholder='请输入章节概要'>" + chapter_outline + "</textarea>";
+            chapterDiv.innerHTML = "<h3>第 " + chapterCount + " 章 概要</h3><textarea id='chapterSummary_" + chapterCount + "' class='chapter' placeholder='请输入章节概要'>" + chapter_outline + "</textarea>";
 
             const subChapterContainer = document.createElement("div");
             subChapterContainer.id = "subChapterContainer_" + chapterCount;
@@ -427,7 +427,7 @@
             const subChapterCount = subChapterContainer.childElementCount;
 
             const subChapterDiv = document.createElement("div");
-            subChapterDiv.innerHTML = "<h4>第" + chapterIndex + "章    第" + subChapterCount + "节</h4><textarea id='subChapterSummary_" + chapterIndex + "_" + subChapterCount + "' class='subchapter' placeholder='请输入子章节概要'>" + outline + "</textarea>";
+            subChapterDiv.innerHTML = "<h4>第" + chapterIndex + "章    第" + subChapterCount + "节 概要</h4><textarea id='subChapterSummary_" + chapterIndex + "_" + subChapterCount + "' class='subchapter' placeholder='请输入子章节概要'>" + outline + "</textarea>";
 
             const paragraphContainer = document.createElement("div");
             paragraphContainer.id = "paragraphContainer_" + chapterIndex + "_" + subChapterCount;
@@ -459,7 +459,7 @@
             const paragraphCount = paragraphContainer.childElementCount;
 
             const paragraphDiv = document.createElement("div");
-            paragraphDiv.innerHTML = "<h5>第" + chapterIndex + "章    第" + subChapterIndex + "节    第" + paragraphCount + "段</h5><textarea id='paragraphSummary_" + chapterIndex + "_" + subChapterIndex + "_" + paragraphCount + "' class='paragraph' placeholder='请输入段落概要'>" + outline + "</textarea>";
+            paragraphDiv.innerHTML = "<h5>第" + chapterIndex + "章    第" + subChapterIndex + "节    第" + paragraphCount + "段 概要</h5><textarea id='paragraphSummary_" + chapterIndex + "_" + subChapterIndex + "_" + paragraphCount + "' class='paragraph' placeholder='请输入段落概要'>" + outline + "</textarea>";
             paragraphDiv.classList.add("indent");
 
             paragraphContainer.appendChild(paragraphDiv);
@@ -522,7 +522,8 @@
                         for (var k = 0; k < subsubchapter_outlines.length; k++) {
                             var subsubchapter_outline = subsubchapter_outlines[k];
                             var paragraph_textarea = $("#paragraphSummary_" + (i + 1) + "_" + (j + 1) + "_" + (k + 1));
-                                                                                                                                                   if (!paragraph_textarea.generated) {
+                                                                                                                                                   console.log(paragraph_textarea.attr("generated"));
+                                                                                                                                                   if (!paragraph_textarea.attr("generated")) {
                                 finished = false;
                                 break;
                             }
@@ -546,7 +547,7 @@
                         className: "loading-toast" // 自定义样式类名
                       }).showToast();
 
-                    const curr_paragraph = document.getElementById("currParagraph");
+                    var curr_paragraph = document.getElementById("currParagraph");
                     curr_paragraph.value = subsubchapter_outline;
 
                     AsyncWriteNextParagraph(
@@ -560,15 +561,22 @@
                             var recap = result["recap"];
 
                             const novelOutput = document.getElementById("novelOutput");
-                            novelOutput.value += text;
+                            if (j == 0 && k == 0) {
+                                novelOutput.value += "\n" + (i + 1) + ".\n\n";
+                            }
+                            if (k == 0) {
+                                novelOutput.value += "\n(" + (j + 1) + ")\n\n";
+                            }
+                            novelOutput.value += text + "\n";
 
                             var paragraph_textarea = $("#paragraphSummary_" + (i + 1) + "_" + (j + 1) + "_" + (k + 1));
                                                                                                                                                    paragraph_textarea.attr("generated", true);
 
                             var recapContainer = document.getElementById("writing_recap");
                             recapContainer.value = recap;
+                            var last_paragraph = text;
                             var lastParagraphContainer = document.getElementById("writing_last_paragraph");
-                            recapContainer.value = text;
+                            lastParagraphContainer.value = last_paragraph;
 
                             loadingToast.hideToast();
 
@@ -585,11 +593,6 @@
 
             WriteNextParagraph(chapter_outlines, character_intro, recap, last_paragraph);
 
-
-
-
-            const novelOutput = document.getElementById("novelOutput");
-            novelOutput.value = novel;
         }
     </script>
 </body>
