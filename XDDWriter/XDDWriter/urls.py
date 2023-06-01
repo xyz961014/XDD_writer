@@ -20,4 +20,8 @@ from . import views
 
 urlpatterns = [
     path('', views.index),
+    path('plan_chapters', views.plan_chapters),
+    path('plan_subchapters', views.plan_subchapters),
+    path('plan_subsubchapters', views.plan_subsubchapters),
+    path('write_subsubchapter', views.write_subsubchapter),
 ]

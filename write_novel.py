@@ -8,7 +8,18 @@ import random
 import jieba
 from tqdm import tqdm
 import ipdb
+
+curr_path = os.path.split(os.path.realpath(__file__))[0]
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Load data
+data_dir = os.path.join(curr_path, "json_data", "with_summary")
+books = []
+for parent, dirnames, filenames in os.walk(data_dir):
+    for filename in filenames:
+        file_path = os.path.join(parent, filename)
+        book_data = json.load(open(file_path, "r"))
+        books.append(book_data)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -583,7 +594,7 @@ def plan_subsubchapters(chapter_outlines, subchapter_outlines, subchapter_outlin
     new_recap = ""
     for content in response.split("\n"):
         if re.search(r"新的当前已创作的内容概要", content):
-            new_recap += content.strip()[11:]
+            new_recap += content.strip()[13:]
             continue
 
         new_recap += content.strip()
@@ -681,7 +692,9 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
 
     prompt += \
     f"""
-    请根据段落概要在上一段落后续写创作情节丰富的小说段落内容, 请直接在<段落内容>中生成新的情节内容，不要拷贝上一段落。段落内容的语言风格必须完全模仿之前给出的例子, 请通过对话等方式发展小说情节, 不描述人物的感想和收获, 不描述事件造成的影响, 不对情节进行总结和升华。输入如下, 请严格使用以上给定的输出格式进行输出: 
+    请根据段落概要在上一段落后续写创作情节丰富的小说段落内容, 请直接在<段落内容>中生成新的情节内容，不要拷贝上一段落。
+    段落内容的语言风格必须完全模仿之前给出的例子, 请通过对话等方式发展小说情节, 不描述人物的感想和收获, 不描述事件造成的影响, 不对情节进行总结和升华。
+    输入如下, 请严格使用以上给定的输出格式进行输出: 
         续写上一段落: 
             {last_paragraph}
         段落概要: 
@@ -689,8 +702,6 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     """
 
     print(prompt)
-    print(len(prompt))
-    ipdb.set_trace()
 
     completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -752,7 +763,7 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     new_recap = ""
     for content in response.split("\n"):
         if re.search(r"新的当前已创作的内容概要", content):
-            new_recap += content.strip()[11:]
+            new_recap += content.strip()[13:]
             continue
 
         new_recap += content.strip()
@@ -762,11 +773,11 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     if len(new_recap) > 500:
         prompt = \
         f"""
-        请用不超过500字概括当前已创作的内容概要，包含尽可能多的情节。
+        请用不超过500字概括出新的当前已创作的内容概要，包含尽可能多的情节。
         请严格按照以下输出格式输出: <内容概要>严格不超过500字;
 
         输出格式:
-            当前已创作的内容概要:
+            新的当前已创作的内容概要:
                 <内容概要>
 
         输入如下:
@@ -789,8 +800,8 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
 
         new_recap = ""
         for content in response.split("\n"):
-            if re.search(r"当前已创作的内容概要", content):
-                new_recap += content.strip()[11:]
+            if re.search(r"新的当前已创作的内容概要", content):
+                new_recap += content.strip()[13:]
                 continue
 
             new_recap += content.strip()
@@ -800,9 +811,13 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     return new_text, new_recap
 
 
+def get_character_intro():
+    character_intro = "".join(books[3]["character_intro"])
+    return character_intro
+
 def main(args):
 
-    character_intro = "".join(books[3]["character_intro"])
+    character_intro = get_character_intro()
 
     #####################################################
     # Plan chapters

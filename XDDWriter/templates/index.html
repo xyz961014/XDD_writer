@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>小说创作</title>
+    <title>ChatGPT 许多多小说创作</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -70,6 +69,24 @@
             color: white;
             transition: background-color 0.3s ease;
         }
+ 
+        .button-normal {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: dodgerblue;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        
+
         
         .button:hover {
             background-color: #45a049;
@@ -88,116 +105,371 @@
             border-radius: 4px;
             font-size: 14px;
         }
+
+        /* 新增样式 */
+        #chapterCountInput, #subChapterCountInput, #paragraphCountInput {
+            width: 50px;
+            margin-left: 10px;
+        }
     </style>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/toastify-js/1.12.0/toastify.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/toastify-js/1.12.0/toastify.css" rel="stylesheet">
 </head>
 <body>
-    <h1>小说创作</h1>
+    <input type="hidden" id="subchapter_recap" value="无内容。">
+    <input type="hidden" id="subsubchapter_recap" value="无内容。">
+    <input type="hidden" id="writing_recap" value="无内容。">
+
+    <h1>ChatGPT 许多多小说创作</h1>
+
+    <h2>人物介绍</h2>
+    <textarea id="character_intro" placeholder="请输入人物介绍">{{ character_intro }}</textarea>
     
-    <h2>整体想法</h2>
-    <textarea id="overallIdea" placeholder="请输入整体想法"></textarea>
+    <h2>小说想法</h2>
+    <textarea id="overallIdea" placeholder="请输入整体想法">{{ idea }}</textarea>
+
+    <h2>章节数量：<input id="chapterCountInput" type="number" value="12" min="1"></h2>
+    <button onclick="PlanChapters()" class="button">ChatGPT 生成章节</button>
+
+    <h2>子章节数量：<input id="subChapterCountInput" type="number" value="3" min="1"></h2>
+    <button onclick="PlanSubChapters()" class="button">ChatGPT 扩展所有章节</button>
+
+    <h2>段落数量：<input id="paragraphCountInput" type="number" value="3" min="1"></h2>
+    <button onclick="PlanSubSubChapters()" class="button">ChatGPT 扩展所有子章节</button>
     
     <h2>章节</h2>
     <div id="chapterContainer"></div>
-    <button onclick="addChapter()" class="button">添加章节</button>
-    
-    <h2>生成的小说</h2>
-    <textarea id="novelOutput" readonly></textarea>
-    
-    <script>
-        let chapterCount = 0;
+    <button onclick="addChapter()" class="button-normal">添加章节</button>
 
-        function addChapter() {
-            chapterCount++;
+    
+    <br>
+    <br>
+    <h1>生成小说</h1>
+    <h2>当前生成段落概要</h2>
+    <textarea id="currParagraph" readonly></textarea>
+    <button onclick="generateNovel()" class="button">ChatGPT 生成小说段落</button>
+    <h2>小说正文</h2>
+    <textarea id="novelOutput"></textarea>
+
+    <script>
+        function PlanChapters() {
+            var idea = document.getElementById('overallIdea').value;
+            var character_intro = document.getElementById('character_intro').value;
+            var num_chapters = document.getElementById('chapterCountInput').value;
+            var data = {
+                "idea": idea,
+                "character_intro": character_intro,
+                "num_chapters": parseInt(num_chapters)
+            };
+            console.log(data);
+
+            var loadingToast = Toastify({
+                text: '大纲 生成中...',
+                duration: -1, // 通过设置duration为-1，使Toast一直显示，直到手动关闭
+                close: false, // 隐藏关闭按钮
+                gravity: "center", // 设置Toast显示在顶部
+                className: "loading-toast" // 自定义样式类名
+              }).showToast();
+
+            $.post("/plan_chapters", 
+                data, 
+                function(result) {
+                    console.log(result);
+                    var chapter_outlines = result["chapter_outlines"]
+                    for (var i in chapter_outlines) {
+                        var chapter_outline = chapter_outlines[i];
+                        addChapter(chapter_outline);
+                    }
+                    loadingToast.hideToast();
+                }, 'json')
+                .fail(function(error) {
+                    console.error(error);
+                });
+
+        }
+
+        function PlanSubChapters() {
+            var num_subchapters = document.getElementById('subChapterCountInput').value;
+
+            var textareaList = $('.chapter'); // 获取所有class为chapter的textarea元素
+            var chapter_outlines = []; // 存储输入内容的列表
+            textareaList.each(function() {
+                var content = $(this).val(); // 获取当前textarea的输入内容
+                chapter_outlines.push(content); // 将内容添加到列表中
+            });
+
+            var chapter_outline = "";
+            var recapContainer = document.getElementById("subchapter_recap");
+            var recap = recapContainer.value;
+
+            function AsyncPlanNextChapter(chapter_outlines, chapter_outline, recap, num_subchapters, callback, fail_callback) {
+
+                var data = {
+                    "chapter_outlines": chapter_outlines,
+                    "chapter_outline": chapter_outline,
+                    "recap": recap,
+                    "num_subchapters": parseInt(num_subchapters)
+                };
+
+                $.post("/plan_subchapters", 
+                    data, 
+                    callback
+                )
+                    .fail(fail_callback);
+
+            }
+
+            function PlanNextChapter(chapter_outlines, recap, num_subchapters) {
+                for (var i = 0; i < chapter_outlines.length; i++) {
+                    var chapter_outline = chapter_outlines[i];
+                    const subChapterContainer = document.getElementById("subChapterContainer_" + (i + 1));
+                    const subChapterCount = subChapterContainer.childElementCount;
+                    if (subChapterCount <= 1) {
+                        break;
+                    }
+                }
+                if (i < chapter_outlines.length) {
+
+                    var loadingToast = Toastify({
+                        text: '第' + (i + 1) + '章' + ' 生成中...',
+                        duration: -1, // 通过设置duration为-1，使Toast一直显示，直到手动关闭
+                        close: false, // 隐藏关闭按钮
+                        gravity: "center", // 设置Toast显示在顶部
+                        className: "loading-toast" // 自定义样式类名
+                      }).showToast();
+
+                    AsyncPlanNextChapter(
+                        chapter_outlines,
+                        chapter_outline,
+                        recap,
+                        num_subchapters,
+                        function(result) {
+                            var subchapter_outlines = result["subchapter_outlines"];
+                            var recap = result["recap"];
+                            for (var i_subchapter in subchapter_outlines) {
+                                var subchapter_outline = subchapter_outlines[i_subchapter];
+                                addSubChapter(i + 1, subchapter_outline);
+                            }
+                            var recapContainer = document.getElementById("subchapter_recap");
+                            recapContainer.value = recap;
+                            loadingToast.hideToast();
+                            PlanNextChapter(chapter_outlines, recap, num_subchapters);
+                        },
+                        function(fail_response) {
+                            loadingToast.hideToast();
+                            PlanNextChapter(chapter_outlines, recap, num_subchapters);
+                        }
+                    );
+                }
+            }
+
+            PlanNextChapter(chapter_outlines, recap, num_subchapters);
+
+        }
+
+        function PlanSubSubChapters() {
+            var num_subsubchapters = document.getElementById('paragraphCountInput').value;
+
+            var textareaList = $('.chapter'); // 获取所有class为chapter的textarea元素
+            var chapter_outlines = []; // 存储输入内容的列表
+            textareaList.each(function() {
+                var content = $(this).val(); // 获取当前textarea的输入内容
+                chapter_outlines.push(content); // 将内容添加到列表中
+            });
+
+            var recapContainer = document.getElementById("subsubchapter_recap");
+            var recap = recapContainer.value;
+
+            function AsyncPlanNextSubChapter(chapter_outlines, subchapter_outlines, subchapter_outline, recap, num_subsubchapters, callback, fail_callback) {
+
+                var data = {
+                    "chapter_outlines": chapter_outlines,
+                    "subchapter_outlines": subchapter_outlines,
+                    "subchapter_outline": subchapter_outline,
+                    "recap": recap,
+                    "num_subsubchapters": parseInt(num_subsubchapters)
+                };
+
+                $.post("/plan_subsubchapters", 
+                    data, 
+                    callback
+                )
+                    .fail(fail_callback);
+
+            }
+
+            function PlanNextSubChapter(chapter_outlines, recap, num_subsubchapters) {
+                var finished = true;
+                for (var i = 0; i < chapter_outlines.length; i++) {
+                    var chapter_outline = chapter_outlines[i];
+
+                    var textareaList = $('#subChapterContainer_' + (i + 1) + ' .subchapter');
+                    var subchapter_outlines = []; // 存储输入内容的列表
+                    textareaList.each(function() {
+                        var content = $(this).val(); // 获取当前textarea的输入内容
+                        subchapter_outlines.push(content); // 将内容添加到列表中
+                    });
+                    for (var j = 0; j < subchapter_outlines.length; j++) {
+                        var subchapter_outline = subchapter_outlines[j];
+                        const paragraphContainer = document.getElementById("paragraphContainer_" + (i + 1) + "_" + (j + 1));
+                        const paragraphCount = paragraphContainer.childElementCount;
+                        if (paragraphCount <= 1) {
+                            finished = false;
+                            break;
+                        }
+
+                    }
+                    if (!finished) {
+                        break;
+                    }
+                }
+
+                if (!finished) {
+                    var loadingToast = Toastify({
+                        text: '第' + (i + 1) + '章 ' + '第' + (j + 1) + '节' + ' 生成中...',
+                        duration: -1, // 通过设置duration为-1，使Toast一直显示，直到手动关闭
+                        close: false, // 隐藏关闭按钮
+                        gravity: "center", // 设置Toast显示在顶部
+                        className: "loading-toast" // 自定义样式类名
+                      }).showToast();
+
+                    AsyncPlanNextSubChapter(
+                        chapter_outlines,
+                        subchapter_outlines,
+                        subchapter_outline,
+                        recap,
+                        num_subsubchapters,
+                        function(result) {
+                            var subsubchapter_outlines = result["subsubchapter_outlines"];
+                            var recap = result["recap"];
+                            for (var i_subsubchapter in subsubchapter_outlines) {
+                                var subsubchapter_outline = subsubchapter_outlines[i_subsubchapter];
+                                addParagraph(i + 1, j + 1, subsubchapter_outline);
+                            }
+                            var recapContainer = document.getElementById("subsubchapter_recap");
+                            recapContainer.value = recap;
+                            loadingToast.hideToast();
+                            PlanNextSubChapter(chapter_outlines, recap, num_subsubchapters);
+                        },
+                        function(fail_response) {
+                            loadingToast.hideToast();
+                            PlanNextSubChapter(chapter_outlines, recap, num_subsubchapters);
+                        }
+                    );
+
+                }
+            }
+
+            PlanNextSubChapter(chapter_outlines, recap, num_subsubchapters);
+
+        }
+    </script>
+
+    <script>
+        function addChapter(chapter_outline="") {
             const chapterContainer = document.getElementById("chapterContainer");
+            const chapterCountInput = document.getElementById("chapterCountInput");
+            const subChapterCountInput = document.getElementById("subChapterCountInput");
+            const paragraphCountInput = document.getElementById("paragraphCountInput");
+            // const chapterCount = parseInt(chapterCountInput.value);
+            // const subChapterCount = parseInt(subChapterCountInput.value);
+            // const paragraphCount = parseInt(paragraphCountInput.value);
+            const chapterCount = chapterContainer.childElementCount + 1;
 
             const chapterDiv = document.createElement("div");
-            chapterDiv.innerHTML = "<h3>概要</h3><textarea id='chapterSummary_" + chapterCount + "' placeholder='请输入章节概要'></textarea>";
+            chapterDiv.innerHTML = "<h3>第 " + chapterCount + " 章</h3><textarea id='chapterSummary_" + chapterCount + "' class='chapter' placeholder='请输入章节概要'>" + chapter_outline + "</textarea>";
 
             const subChapterContainer = document.createElement("div");
             subChapterContainer.id = "subChapterContainer_" + chapterCount;
             subChapterContainer.classList.add("indent");
 
+            // for (let i = 0; i < subChapterCount; i++) {
+            //     const subChapterDiv = document.createElement("div");
+            //     subChapterDiv.innerHTML = "<h4>概要</h4><textarea id='subChapterSummary_" + (chapterContainer.childElementCount + 1) + "_" + (i + 1) + "' placeholder='请输入子章节概要'></textarea>";
+
+            //     const paragraphContainer = document.createElement("div");
+            //     paragraphContainer.id = "paragraphContainer_" + (chapterContainer.childElementCount + 1) + "_" + (i + 1);
+            //     paragraphContainer.classList.add("indent");
+
+            //     for (let j = 0; j < paragraphCount; j++) {
+            //         const paragraphDiv = document.createElement("div");
+            //         paragraphDiv.innerHTML = "<h5>概要</h5><textarea id='paragraphSummary_" + (chapterContainer.childElementCount + 1) + "_" + (i + 1) + "_" + (j + 1) + "' placeholder='请输入段落概要'></textarea>";
+            //         paragraphDiv.classList.add("indent");
+
+            //         paragraphContainer.appendChild(paragraphDiv);
+            //     }
+
+            //     const addParagraphButton = document.createElement("button");
+            //     addParagraphButton.textContent = "添加段落";
+            //     addParagraphButton.onclick = function() { addParagraph((chapterContainer.childElementCount + 1), (i + 1)); };
+            //     addParagraphButton.classList.add("button");
+
+            //     subChapterDiv.appendChild(paragraphContainer);
+            //     subChapterDiv.appendChild(addParagraphButton);
+            //     subChapterContainer.appendChild(subChapterDiv);
+            // }
+
             const addSubChapterButton = document.createElement("button");
             addSubChapterButton.textContent = "添加子章节";
             addSubChapterButton.onclick = function() { addSubChapter(chapterCount); };
-            addSubChapterButton.classList.add("button");
+            addSubChapterButton.classList.add("button-normal");
 
+            subChapterContainer.appendChild(addSubChapterButton);
             chapterDiv.appendChild(subChapterContainer);
-            chapterDiv.appendChild(addSubChapterButton);
             chapterContainer.appendChild(chapterDiv);
         }
 
-        function addSubChapter(chapterIndex) {
+        function addSubChapter(chapterIndex, outline="") {
             const subChapterContainer = document.getElementById("subChapterContainer_" + chapterIndex);
-            const subChapterCount = subChapterContainer.childElementCount + 1;
+            const subChapterCount = subChapterContainer.childElementCount;
 
             const subChapterDiv = document.createElement("div");
-            subChapterDiv.innerHTML = "<h4>概要</h4><textarea id='subChapterSummary_" + chapterIndex + "_" + subChapterCount + "' placeholder='请输入子章节概要'></textarea>";
+            subChapterDiv.innerHTML = "<h4>第" + chapterIndex + "章    第" + subChapterCount + "节</h4><textarea id='subChapterSummary_" + chapterIndex + "_" + subChapterCount + "' class='subchapter' placeholder='请输入子章节概要'>" + outline + "</textarea>";
 
             const paragraphContainer = document.createElement("div");
             paragraphContainer.id = "paragraphContainer_" + chapterIndex + "_" + subChapterCount;
             paragraphContainer.classList.add("indent");
 
+            // const paragraphCountInput = document.getElementById("paragraphCountInput");
+            // const paragraphCount = parseInt(paragraphCountInput.value);
+
+            // for (let i = 0; i < paragraphCount; i++) {
+            //     const paragraphDiv = document.createElement("div");
+            //     paragraphDiv.innerHTML = "<h5>概要</h5><textarea id='paragraphSummary_" + chapterIndex + "_" + subChapterCount + "_" + (i + 1) + "' placeholder='请输入段落概要'></textarea>";
+            //     paragraphDiv.classList.add("indent");
+
+            //     paragraphContainer.appendChild(paragraphDiv);
+            // }
+
             const addParagraphButton = document.createElement("button");
             addParagraphButton.textContent = "添加段落";
             addParagraphButton.onclick = function() { addParagraph(chapterIndex, subChapterCount); };
-            addParagraphButton.classList.add("button");
+            addParagraphButton.classList.add("button-normal");
 
+            paragraphContainer.appendChild(addParagraphButton);
             subChapterDiv.appendChild(paragraphContainer);
-            subChapterDiv.appendChild(addParagraphButton);
             subChapterContainer.appendChild(subChapterDiv);
         }
 
-        function addParagraph(chapterIndex, subChapterIndex) {
+        function addParagraph(chapterIndex, subChapterIndex, outline="") {
             const paragraphContainer = document.getElementById("paragraphContainer_" + chapterIndex + "_" + subChapterIndex);
-            const paragraphCount = paragraphContainer.childElementCount + 1;
+            const paragraphCount = paragraphContainer.childElementCount;
 
             const paragraphDiv = document.createElement("div");
-            paragraphDiv.innerHTML = "<h5>概要</h5><textarea id='paragraphSummary_" + chapterIndex + "_" + subChapterIndex + "_" + paragraphCount + "' placeholder='请输入段落概要'></textarea>";
+            paragraphDiv.innerHTML = "<h5>第" + chapterIndex + "章    第" + subChapterIndex + "节    第" + paragraphCount + "段</h5><textarea id='paragraphSummary_" + chapterIndex + "_" + subChapterIndex + "_" + paragraphCount + "' class='paragraph' placeholder='请输入段落概要'>" + outline + "</textarea>";
             paragraphDiv.classList.add("indent");
 
             paragraphContainer.appendChild(paragraphDiv);
         }
 
         function generateNovel() {
-            let novel = "";
-            const overallIdea = document.getElementById("overallIdea").value.trim();
-            novel += "整体想法：\n" + overallIdea + "\n\n";
 
-            const chapterContainer = document.getElementById("chapterContainer");
-            const chapters = chapterContainer.children;
-
-            for (let i = 0; i < chapters.length; i++) {
-                const chapterDiv = chapters[i];
-                const chapterIndex = i + 1;
-                const chapterSummary = document.getElementById("chapterSummary_" + chapterIndex).value.trim();
-                novel += "第 " + chapterIndex + " 章：\n概要：" + chapterSummary + "\n";
-
-                const subChapterContainer = document.getElementById("subChapterContainer_" + chapterIndex);
-                const subChapters = subChapterContainer.children;
-
-                for (let j = 0; j < subChapters.length; j++) {
-                    const subChapterDiv = subChapters[j];
-                    const subChapterIndex = j + 1;
-                    const subChapterSummary = document.getElementById("subChapterSummary_" + chapterIndex + "_" + subChapterIndex).value.trim();
-                    novel += "    子章节 " + subChapterIndex + "：\n    概要：" + subChapterSummary + "\n";
-
-                    const paragraphContainer = document.getElementById("paragraphContainer_" + chapterIndex + "_" + subChapterIndex);
-                    const paragraphs = paragraphContainer.children;
-
-                    for (let k = 0; k < paragraphs.length; k++) {
-                        const paragraphDiv = paragraphs[k];
-                        const paragraphIndex = k + 1;
-                        const paragraphSummary = document.getElementById("paragraphSummary_" + chapterIndex + "_" + subChapterIndex + "_" + paragraphIndex).value.trim();
-                        novel += "        段落 " + paragraphIndex + "：\n        概要：" + paragraphSummary + "\n";
-                    }
-                }
-            }
 
             const novelOutput = document.getElementById("novelOutput");
             novelOutput.value = novel;
         }
     </script>
-    <button onclick="generateNovel()" class="button">生成小说</button>
 </body>
 </html>
