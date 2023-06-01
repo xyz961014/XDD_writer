@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>ChatGPT 许多多小说创作</title>
+    <title>ChatGPT 许多多小说胡编</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -85,7 +85,23 @@
             color: white;
             transition: background-color 0.3s ease;
         }
-        
+         
+        .button-del {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: red;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+ 
 
         
         .button:hover {
@@ -116,6 +132,7 @@
     <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/toastify-js/1.12.0/toastify.js"></script>
     <link href="https://cdn.bootcdn.net/ajax/libs/toastify-js/1.12.0/toastify.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap-grid.min.css" rel="stylesheet">
 </head>
 <body>
     <input type="hidden" id="subchapter_recap" value="无内容。">
@@ -123,7 +140,7 @@
     <input type="hidden" id="writing_recap" value="无内容。">
     <input type="hidden" id="writing_last_paragraph" value="无内容。">
 
-    <h1>ChatGPT 许多多小说创作</h1>
+    <h1>ChatGPT 许多多小说胡编</h1>
 
     <h2>人物介绍</h2>
     <textarea id="character_intro" placeholder="请输入人物介绍">{{ character_intro }}</textarea>
@@ -164,7 +181,10 @@
                 "character_intro": character_intro,
                 "num_chapters": parseInt(num_chapters)
             };
-            console.log(data);
+            // console.log(data);
+
+            var chapterDiv = document.getElementById("chapterContainer");
+            chapterDiv.innerHTML = "";
 
             var loadingToast = Toastify({
                 text: '大纲 生成中...',
@@ -380,7 +400,14 @@
             const chapterCount = chapterContainer.childElementCount + 1;
 
             const chapterDiv = document.createElement("div");
+            chapterDiv.id = "chapterDiv_" + chapterCount;
             chapterDiv.innerHTML = "<h3>第 " + chapterCount + " 章 概要</h3><textarea id='chapterSummary_" + chapterCount + "' class='chapter' placeholder='请输入章节概要'>" + chapter_outline + "</textarea>";
+
+            // const deleteButton = document.createElement("button");
+            // deleteButton.classList.add("button-del");
+            // deleteButton.textContent = "删除本章";
+            // deleteButton.onclick = function() { deleteSummaryInput(chapterDiv.id); };
+            // chapterDiv.appendChild(deleteButton);
 
             const subChapterContainer = document.createElement("div");
             subChapterContainer.id = "subChapterContainer_" + chapterCount;
@@ -427,7 +454,14 @@
             const subChapterCount = subChapterContainer.childElementCount;
 
             const subChapterDiv = document.createElement("div");
+            subChapterDiv.id = "subChapterDiv_" + subChapterCount;
             subChapterDiv.innerHTML = "<h4>第" + chapterIndex + "章    第" + subChapterCount + "节 概要</h4><textarea id='subChapterSummary_" + chapterIndex + "_" + subChapterCount + "' class='subchapter' placeholder='请输入子章节概要'>" + outline + "</textarea>";
+
+            // const deleteButton = document.createElement("button");
+            // deleteButton.classList.add("button-del");
+            // deleteButton.textContent = "删除本节";
+            // deleteButton.onclick = function() { deleteSummaryInput(subChapterDiv.id); };
+            // subChapterDiv.appendChild(deleteButton);
 
             const paragraphContainer = document.createElement("div");
             paragraphContainer.id = "paragraphContainer_" + chapterIndex + "_" + subChapterCount;
@@ -459,10 +493,22 @@
             const paragraphCount = paragraphContainer.childElementCount;
 
             const paragraphDiv = document.createElement("div");
+            paragraphDiv.id = "paragraphDiv_" + paragraphCount;
             paragraphDiv.innerHTML = "<h5>第" + chapterIndex + "章    第" + subChapterIndex + "节    第" + paragraphCount + "段 概要</h5><textarea id='paragraphSummary_" + chapterIndex + "_" + subChapterIndex + "_" + paragraphCount + "' class='paragraph' placeholder='请输入段落概要'>" + outline + "</textarea>";
             paragraphDiv.classList.add("indent");
 
+            // const deleteButton = document.createElement("button");
+            // deleteButton.classList.add("button-del");
+            // deleteButton.textContent = "删除本段";
+            // deleteButton.onclick = function() { deleteSummaryInput(paragraphDiv.id); };
+            // paragraphDiv.appendChild(deleteButton);
+
             paragraphContainer.appendChild(paragraphDiv);
+        }
+
+        function deleteSummaryInput(id) {
+            const element = document.getElementById(id);
+            element.remove();
         }
 
         function generateNovel() {
