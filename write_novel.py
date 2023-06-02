@@ -156,6 +156,7 @@ def plan_chapters(idea, character_intro, num_chapters=12):
 
     prompt = \
     f"""
+    你是一位儿童文学作家, 正在创作一本主人公为小学男生许多多的儿童小说。
     请根据提供的想法构思主人公为许多多的小说的大纲, 尽可能设计生动有趣的情节。
     在创作时, 重要的是小说情节的发展, 不要进行说理和总结。
     """
@@ -174,7 +175,7 @@ def plan_chapters(idea, character_intro, num_chapters=12):
     f"""
     例{i_example + 1}
         想法: {chapter_prompt["prompt"]}
-        输出:
+        大纲:
             """
         for i_chapter, chapter_summary in enumerate(chapter_prompt["completion"]):
             prompt += \
@@ -194,7 +195,7 @@ def plan_chapters(idea, character_intro, num_chapters=12):
     prompt += \
     f"""
 
-    请扩展以下想法生成小说的大纲: 
+    请模仿以上给出的例子, 扩展以下想法生成小说的大纲, 尽可能包含丰富生动的故事情节, 请严格使用以上给定的输出格式进行输出: 
         想法: {idea}
     """
 
@@ -333,19 +334,21 @@ def plan_subchapters(chapter_outlines, chapter_outline, recap, num_subchapters=3
 
     prompt = \
     f"""
+    你是一位儿童文学作家, 正在创作一本主人公为小学男生许多多的儿童小说。
     请根据小说大纲和提供的章节概要扩展章节的子章节的内容概要, 子章节的内容概要需要包括更加丰富的情节, 请尽可能设计生动有趣的情节。
     请参考当前已创作的内容概要, 确保新创作的小说情节和之前已创作的情节之间的发展符合逻辑。
     在创作时, 重要的是小说情节的发展, 不要进行说理和总结。
     """
     prompt += \
     f"""
-    以下是一些扩展章节概要输出子章节的内容概要的例子。
+    以下是一些给定章节概要输出扩展章节概要的例子。
     """
     for i_example, subchapter_prompt in enumerate(subchapter_prompts):
         prompt += \
     f"""
     例{i_example + 1}
-        章节概要: {subchapter_prompt["prompt"]}
+        章节概要: 
+            {subchapter_prompt["prompt"]}
         扩展章节概要:
             """
         for i_subchapter, subchapter_summary in enumerate(subchapter_prompt["completion"]):
@@ -385,7 +388,7 @@ def plan_subchapters(chapter_outlines, chapter_outline, recap, num_subchapters=3
     prompt += \
     f"""
 
-    请扩展以下章节概要生成{num_subchapters}个子章节概要: 
+    请模仿以上给出的例子, 扩展以下章节概要生成{num_subchapters}个子章节概要, 每个子章节概要至少应该包含三个丰富生动的故事情节, 只用故事情节来表达章节概要的内容, 不许写主人公学会、明白、感悟、意识到等内容。请严格使用以上给定的输出格式进行输出: 
         章节概要:
             {chapter_outline}
     """
@@ -411,7 +414,7 @@ def plan_subchapters(chapter_outlines, chapter_outline, recap, num_subchapters=3
 
     prompt = \
     f"""
-    请用一段文本概括当前已创作的内容概要和新扩展的章节概要, 生成新的当前已创作的内容概要, 请包含尽可能多的情节,  不超过500字。
+    请用一段文本概括当前已创作的内容概要和新扩展的章节概要, 生成新的当前已创作的内容概要, 请包含尽可能多的情节, 不超过500字。
     请严格按照以下输出格式输出: <内容概要>严格不超过500字;
 
     输出格式:
@@ -478,6 +481,7 @@ def plan_subsubchapters(chapter_outlines, subchapter_outlines, subchapter_outlin
 
     prompt = \
     f"""
+    你是一位儿童文学作家, 正在创作一本主人公为小学男生许多多的儿童小说。
     请根据小说的子章节概要和提供的其他信息扩展子章节的各个段落的段落概要, 段落概要需要包括更加具体的情节, 请尽可能设计生动有趣的情节。
     请参考当前已创作的内容概要, 确保新创作的小说情节和之前已创作的情节之间的发展符合逻辑。
     在创作时, 重要的是推动小说情节的发展, 不要说理和总结, 不要描述人物的感想和收获。
@@ -535,7 +539,7 @@ def plan_subsubchapters(chapter_outlines, subchapter_outlines, subchapter_outlin
 
     prompt += \
     f"""
-    请扩展以下子章节概要生成子章节段落概要, 注意使用给定的格式进行输出: 
+    请模仿以上给出的例子, 扩展以下子章节概要生成子章节段落概要, 每个段落概要至少应该包含三个丰富生动的故事情节, 只用故事情节来表达子章节概要的内容, 不许写主人公学会、体会、明白、感悟、意识到等内容。请严格使用以上给定的输出格式进行输出: 
         子章节概要:
             {subchapter_outline}
     """
@@ -638,9 +642,9 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
 
     prompt = \
     f"""
-    请创作主人公为小学生许多多的小说。
+    你是一位儿童文学作家, 正在创作一本主人公为小学男生许多多的儿童小说。
     请根据小说的段落概要和提供的其他信息使用生动的文字完成段落的创作, 创作时不用拘泥于段落概要的内容, 尽可能创造生动有趣的情节。
-    在创作时请接着创作段落的上一段落续写, 保证段落之间的流畅性。在小说创作时, 重要的是推动小说情节的发展, 不要说理和总结, 不要描述人物的感想和收获。
+    在创作时请接着创作段落的上一段落续写, 保证段落之间的流畅性。你是一位儿童文学作家, 在创作小说时, 重要的是推动小说情节的发展, 着重描述故事的细节, 不要说理和总结, 不要描述人物的感想和收获。
     请参考当前已创作的内容概要, 在保证段落之间流畅性的同时，确保全文情节发展符合逻辑。
     """
     prompt += \
@@ -693,7 +697,7 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     prompt += \
     f"""
     请根据段落概要在上一段落后续写创作情节丰富的小说段落内容, 请直接在<段落内容>中生成新的情节内容，不要拷贝上一段落。
-    段落内容的语言风格必须完全模仿之前给出的例子, 请通过对话等方式发展小说情节, 不描述人物的感想和收获, 不描述事件造成的影响, 不对情节进行总结和升华。
+    段落内容的语言风格必须完全模仿之前给出的例子。请通过对话等方式发展小说情节, 思考什么样的情节是引人入胜的。请只用故事情节来表达段落概要的内容, 不要描述人物的感想和收获, 不描述事件造成的影响, 不对情节进行总结和升华。注意你正在创作一篇长篇小说, 故事才刚刚开始, 不要让情节发展得过快。
     输入如下, 请严格使用以上给定的输出格式进行输出: 
         续写上一段落: 
             {last_paragraph}
