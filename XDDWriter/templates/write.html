@@ -146,19 +146,19 @@
         <h2>小说想法</h2>
         <textarea id="overall_idea" placeholder="请输入整体想法">{{ idea }}</textarea>
 
-        <h2>其他指示</h2>
-        <textarea id="instruction" placeholder="请输入附加的提示词">{{ instruction }}</textarea>
-
         <h2>已创作内容概要</h2>
-        <textarea id="writing_recap">无内容</textarea>
+        <textarea id="writing_recap">无内容。</textarea>
         
         <h2>下一段落提要</h2>
         <textarea id="paragraph_outline">{{ prompt }}</textarea>
 
+        <h2>其他指示</h2>
+        <textarea id="instruction" placeholder="请输入附加的提示词">{{ instruction }}</textarea>
+
         <button onclick="generateNovel()" class="button">ChatGPT 小说下一段落写作</button>
 
         <h1>小说正文</h1>
-        <textarea id="novel_output"></textarea>
+        <textarea id="novel_output" style="height: 500px;"></textarea>
 
     </div>
 

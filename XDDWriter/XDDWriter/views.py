@@ -25,7 +25,7 @@ def write(request):
             "character_intro": write_novel.get_character_intro(),
             "idea": "许多多开始玩动物森友会游戏，他一开始赚了很多钱，但是他逐渐发现并不是所有事情都可以靠钱来解决，单单有钱并没有什么用。",
             "prompt": "许多多开始玩动物森友会游戏， 他通过在游戏里买卖大头菜赚了很多钱。",
-            "instruction": "请注意: 不要让小动物说话。"
+            "instruction": "请注意: \n1. 不要让小动物说话。\n2. 动物森友会中, 玩家可以每周日向NPC曹卖购买价格大头菜，然后根据市场变化选择最佳时机出售以获取最大利润。\n3. 请描述许多多买卖大头菜的细节。"
             }
     return render(request, "write.html", html_data)
 
