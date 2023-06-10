@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ChatGPT 许多多小说胡编</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        h3 {
+            color: #999;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        h4 {
+            color: #ccc;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        
+        h5 {
+            color: #ddd;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 80px;
+            resize: vertical;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .indent {
+            margin-left: 30px;
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+ 
+        .button-normal {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: dodgerblue;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+         
+        .button-del {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: red;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+ 
+
+        
+        .button:hover {
+            background-color: #45a049;
+        }
+        
+        .button:focus {
+            outline: none;
+        }
+        
+        #novelOutput {
+            width: 100%;
+            height: 200px;
+            margin-top: 20px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* 新增样式 */
+        #chapterCountInput, #subChapterCountInput, #paragraphCountInput {
+            width: 50px;
+            margin-left: 10px;
+        }
+    </style>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/toastify-js/1.12.0/toastify.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/toastify-js/1.12.0/toastify.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap-grid.min.css" rel="stylesheet">
+</head>
+<body>
+    
+    <div class="container">
+
+        <h1>ChatGPT 许多多小说胡编</h1>
+
+        <h2>人物介绍</h2>
+        <textarea id="character_intro" placeholder="请输入人物介绍">{{ character_intro }}</textarea>
+        
+        <h2>小说想法</h2>
+        <textarea id="overall_idea" placeholder="请输入整体想法">{{ idea }}</textarea>
+
+        <h2>其他指示</h2>
+        <textarea id="instruction" placeholder="请输入附加的提示词">{{ instruction }}</textarea>
+
+        <h2>已创作内容概要</h2>
+        <textarea id="writing_recap">无内容</textarea>
+        
+        <h2>下一段落提要</h2>
+        <textarea id="paragraph_outline">{{ prompt }}</textarea>
+
+        <button onclick="generateNovel()" class="button">ChatGPT 小说下一段落写作</button>
+
+        <h1>小说正文</h1>
+        <textarea id="novel_output"></textarea>
+
+    </div>
+
+    <script>
+        function generateNovel() {
+
+            var idea = document.getElementById('overall_idea').value;
+            var character_intro = document.getElementById('character_intro').value;
+            var recap = document.getElementById("writing_recap").value;
+            var last_paragraph = document.getElementById("novel_output").value;
+            var paragraph_outline = document.getElementById("paragraph_outline").value;
+            var instruction = document.getElementById("instruction").value;
+
+
+            function AsyncWriteNextParagraph(idea, character_intro, recap, last_paragraph, paragraph_outline, instruction, callback, fail_callback) {
+
+                var data = {
+                    "idea": idea,
+                    "character_intro": character_intro,
+                    "recap": recap,
+                    "last_paragraph": last_paragraph,
+                    "paragraph_outline": paragraph_outline,
+                    "instruction": instruction
+                };
+
+                $.post("/write_paragraph", 
+                    data, 
+                    callback
+                )
+                    .fail(fail_callback);
+
+            }
+
+            function WriteNextParagraph(idea, character_intro, recap, last_paragraph, paragraph_outline, instruction) {
+                var loadingToast = Toastify({
+                    text: '写作中...',
+                    duration: -1, // 通过设置duration为-1，使Toast一直显示，直到手动关闭
+                    close: false, // 隐藏关闭按钮
+                    gravity: "center", // 设置Toast显示在顶部
+                    className: "loading-toast" // 自定义样式类名
+                  }).showToast();
+
+                AsyncWriteNextParagraph(
+                    idea,
+                    character_intro,
+                    recap,
+                    last_paragraph,
+                    paragraph_outline,
+                    instruction,
+                    function(result) {
+                        var text = result["text"];
+                        var recap = result["recap"];
+                        var next_prompt = result["next_prompt"];
+
+                        const novelOutput = document.getElementById("novel_output");
+                        novelOutput.value += text + "\n";
+
+                        var recapContainer = document.getElementById("writing_recap");
+                        recapContainer.value = recap;
+
+                        var promptContainer = document.getElementById("paragraph_outline");
+                        promptContainer.value = next_prompt;
+
+                        loadingToast.hideToast();
+                    },
+                    function(fail_response) {
+                        loadingToast.hideToast();
+                        WriteNextParagraph(idea, character_intro, recap, last_paragraph, paragraph_outline, instruction);
+                    }
+                );
+
+            }
+
+            WriteNextParagraph(idea, character_intro, recap, last_paragraph, paragraph_outline, instruction);
+
+        }
+    </script>
+</body>
+</html>

@@ -20,6 +20,15 @@ def index(request):
             }
     return render(request, "index.html", html_data)
 
+def write(request):
+    html_data = {
+            "character_intro": write_novel.get_character_intro(),
+            "idea": "许多多开始玩动物森友会游戏，他一开始赚了很多钱，但是他逐渐发现并不是所有事情都可以靠钱来解决，单单有钱并没有什么用。",
+            "prompt": "许多多开始玩动物森友会游戏， 他通过在游戏里买卖大头菜赚了很多钱。",
+            "instruction": "请注意: 不要让小动物说话。"
+            }
+    return render(request, "write.html", html_data)
+
 
 def plan_chapters(request):
     idea = request.POST.get("idea", "无")
@@ -78,3 +87,21 @@ def write_subsubchapter(request):
                                                   last_paragraph,
                                                   subsubchapter_outline)
     return JsonResponse({'text': text, "recap": recap})
+
+
+def write_paragraph(request):
+    idea = request.POST.get("idea", "无")
+    character_intro = request.POST.get("character_intro", "无")
+    recap = request.POST.get("recap", "无")
+    last_paragraph = request.POST.get("last_paragraph", "无")
+    paragraph_outline = request.POST.get("paragraph_outline", "无")
+    instruction = request.POST.get("instruction", "")
+
+    text, recap, next_prompt = write_novel.write_paragraph(idea, 
+                                                           character_intro,
+                                                           recap,
+                                                           last_paragraph,
+                                                           paragraph_outline,
+                                                           instruction
+                                                           )
+    return JsonResponse({'text': text, "recap": recap, "next_prompt": next_prompt})

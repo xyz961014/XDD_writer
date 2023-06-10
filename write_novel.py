@@ -817,6 +817,351 @@ def write_subsubchapter(chapter_outlines, character_intro, recap, last_paragraph
     return new_text, new_recap
 
 
+def write_paragraph(idea, character_intro, recap, last_paragraph, paragraph_outline, instruction=""):
+    """
+    Input: 
+        idea: General idea of the novel
+        character_intro: Introduction to characters (500)
+        recap: A long-term memory block summarizing content already planned/written (500)
+        last_paragraph: Last subsubchapter to continue writing on (500)
+        paragraph_outline: Outline of the subsubchapter to write (50)
+        instruction: additional instruction
+
+    Few Shot Prompt:
+        (
+            Subsubchapter Summary (50)
+            Subsubchapter Content (500)
+        ) (~ 550 * 1)
+
+    Output: 
+        Content of the subsubchapter (500)
+        Recap of written content (500)
+    """
+
+    writing_prompts = get_writing_prompts(1)
+
+    if recap.strip() == "":
+        recap = "无内容。"
+    if last_paragraph.strip() == "":
+        last_paragraph = "无内容。"
+
+    if len(last_paragraph) > 500:
+        sentences = split_sentences(last_paragraph)
+
+        shorter_text = ""
+        for i in range(len(sentences) - 1, -1, -1):
+            sentence = sentences[i]
+            if len(shorter_text) + len(sentence) < 500:
+                shorter_text = sentence + shorter_text
+        last_paragraph = shorter_text
+
+    prompt = \
+    f"""
+    你是一位儿童文学作家, 正在创作一本主人公为小学男生许多多的儿童小说。
+    请根据小说的段落概要和提供的其他信息完成小说段落的创作, 创作时不用拘泥于段落概要的内容, 尽可能创造具体、生动、有趣的情节。
+    在创作时请接着创作段落的上一段落续写, 保证段落之间的流畅性。在创作小说时, 重要的是推动小说情节的发展, 着重描述故事的细节, 不要说理和总结, 不要描述人物的感想和收获。
+    请参考当前已创作的内容概要, 在保证段落之间流畅性的同时，确保全文情节发展符合逻辑。
+    """
+    prompt += \
+    f"""
+    以下是根据段落概要创作段落内容的例子, 请模仿语言风格并参考人物性格。
+    """
+    for i_example, writing_prompt in enumerate(writing_prompts):
+        prompt += \
+    f"""
+    例子
+        段落概要: 
+            {writing_prompt["prompt"]}
+        段落内容:
+            {writing_prompt["completion"]}<完成>
+    """
+    prompt += \
+    f"""
+    请参考以下信息进行输出: 
+    """
+    prompt += \
+    f"""
+    小说概要:
+        {idea}
+    """
+
+    prompt += \
+    f"""
+    小说的人物介绍: 
+        {character_intro}
+    """
+
+    prompt += \
+    f"""
+    当前已创作的内容概要:
+        {recap}
+    """
+
+    prompt += \
+    f"""
+    请严格按照以下输出格式输出段落内容: <段落内容>严格不超过500字; 段落创作完成后, 输出带有"<>"符号的"<完成>"来表示已经完成段落创作;
+   
+    输出格式:
+        段落内容:
+            <段落内容>
+    """
+
+    prompt += \
+    f"""
+    输入如下, 请严格使用以上给定的输出格式进行输出: 
+        上一段落: 
+            {last_paragraph}
+        段落概要: 
+            {paragraph_outline}
+
+    请根据段落概要在续写上一段落, 请直接在<段落内容>中生成新的情节内容，不要拷贝上一段落。
+    段落内容的语言风格必须完全模仿之前给出的例子。请通过对话等方式发展小说情节, 思考什么样的情节是引人入胜的。
+    请只用故事情节来表达段落概要的内容, 不要描述人物的感想和收获, 不描述事件造成的影响, 不对情节进行总结和升华。
+    注意你正在创作一篇长篇小说, 故事才刚刚开始, 不要让情节发展得过快。
+    你写的段落内容是紧接着上一段落展开的, 请确保语言和情节内容的流畅性。"""
+    if instruction.strip() != "":
+        prompt += \
+    f"""
+    {instruction}
+    """
+
+    print(prompt)
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+              "role": "user", 
+              "content": prompt
+            },
+        ]
+    )
+    response = completion["choices"][0]["message"]["content"]
+    print(response)
+
+    complete = False
+    new_text = ""
+    for content in response.split("\n"):
+        if re.search(r"<完成>", content):
+            complete = True
+            content = re.sub(r"<完成>", "", content)
+
+        if re.search(r"段落内容", content):
+            new_text += "\n" + content[5:].strip()
+            continue
+
+        if re.search(r"续写上一段落", content):
+            new_text += "\n" + content[7:].strip()
+            continue
+
+        new_text += "\n" + content.strip()
+
+        if complete:
+            break
+
+    while not complete:
+        writing_prompts = get_writing_prompts(1)
+        split_pos = int(0.5 * len(writing_prompt["completion"]))
+
+        prompt = \
+    f"""
+    你是一位儿童文学作家, 正在创作一本主人公为小学男生许多多的儿童小说。
+    请根据段落概要续写未完成段落, 以下是一个例子。
+    """
+        prompt += \
+    f"""
+    例子
+    输入如下:
+        段落概要: 
+            {writing_prompt["prompt"]}
+        未完成段落:
+            {writing_prompt["completion"][:split_pos]}
+    输出:
+        续写段落内容:
+            {writing_prompt["completion"][split_pos:]}<完成>
+    """
+        prompt += \
+    f"""
+    请严格按照以下输出格式输出续写段落内容: <续写段落内容>和未完成段落总计不超过500字; 段落续写完成后, 输出带有"<>"符号的"<完成>"来表示已经完成段落创作;
+   
+    输出格式:
+        续写段落内容:
+            <续写段落内容>
+    """
+        prompt += \
+    f"""
+    输入如下, 请严格使用以上给定的输出格式进行输出: 
+        段落概要:
+            {paragraph_outline}
+        未完成段落:
+            {new_text}
+
+    请直接在<续写段落内容>中续写未完成段落, 生成新的情节内容，不要拷贝上一段落。
+    请只用故事情节来表达段落概要的内容, 不要描述人物的感想和收获, 不描述事件造成的影响, 不对情节进行总结和升华。
+    注意你正在创作一篇长篇小说, 故事才刚刚开始, 不要让情节发展得过快。
+    """
+        if instruction.strip() != "":
+            prompt += \
+    f"""
+    {instruction}
+    """
+        print(prompt)
+
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                  "role": "user", 
+                  "content": prompt
+                },
+            ]
+        )
+        response = completion["choices"][0]["message"]["content"]
+        print(response)
+
+        for content in response.split("\n"):
+            if re.search(r"<完成>", content):
+                complete = True
+                content = re.sub(r"<完成>", "", content)
+
+            if re.search(r"续写段落内容", content):
+                new_text += "\n" + content[7:].strip()
+                continue
+
+            if re.search(r"续写上一段落", content):
+                new_text += "\n" + content[7:].strip()
+                continue
+
+            new_text += "\n" + content.strip()
+
+            if complete:
+                break
+
+
+    prompt = \
+    f"""
+    请概括当前已创作的内容概要, 上一段落和当前段落生成新的当前已创作的内容概要, 请包含尽可能多的情节, 不超过500字。
+    请严格按照以下输出格式输出: <内容概要>严格不超过500字;
+
+    输出格式:
+        新的当前已创作的内容概要:
+            <内容概要>
+
+    输入如下:
+        当前已创作的内容概要:
+            {recap}
+        上一段落:
+            {last_paragraph}
+        当前段落:
+            {new_text}
+    """
+    print(prompt)
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+              "role": "user", 
+              "content": prompt
+            },
+        ]
+    )
+    response = completion["choices"][0]["message"]["content"]
+    print(response)
+
+    new_recap = ""
+    for content in response.split("\n"):
+        if re.search(r"新的当前已创作的内容概要", content):
+            new_recap += content.strip()[13:]
+            continue
+
+        new_recap += content.strip()
+        if len(new_recap) > 500:
+            break
+
+    prompt = \
+    f"""
+    请根据当前已创作的内容概要, 上一段落和当前段落设计下一段落的内容提要, 不超过50字。
+    请严格按照以下输出格式输出: <内容提要>严格不超过50字;
+
+    输出格式:
+        下一段落的内容提要:
+            <内容提要>
+
+    输入如下:
+        当前已创作的内容概要:
+            {recap}
+        上一段落:
+            {last_paragraph}
+        当前段落:
+            {new_text}
+    """
+    print(prompt)
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+              "role": "user", 
+              "content": prompt
+            },
+        ]
+    )
+    response = completion["choices"][0]["message"]["content"]
+    print(response)
+
+    next_prompt = ""
+    for content in response.split("\n"):
+        if re.search(r"下一段落的内容提要", content):
+            next_prompt += content.strip()[10:]
+            continue
+
+        next_prompt += content.strip()
+        if len(next_prompt) > 500:
+            break
+
+    if len(new_recap) > 500:
+        prompt = \
+        f"""
+        请用不超过500字概括出新的当前已创作的内容概要，包含尽可能多的情节。
+        请严格按照以下输出格式输出: <内容概要>严格不超过500字;
+
+        输出格式:
+            新的当前已创作的内容概要:
+                <内容概要>
+
+        输入如下:
+            当前已创作的内容概要:
+                {new_recap}
+        """
+        print(prompt)
+
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                  "role": "user", 
+                  "content": prompt
+                },
+            ]
+        )
+        response = completion["choices"][0]["message"]["content"]
+        print(response)
+
+        new_recap = ""
+        for content in response.split("\n"):
+            if re.search(r"新的当前已创作的内容概要", content):
+                new_recap += content.strip()[13:]
+                continue
+
+            new_recap += content.strip()
+            if len(new_recap) > 500:
+                break
+
+    return new_text, new_recap, next_prompt
+
+
+
 def get_character_intro():
     character_intro = "".join(books[3]["character_intro"])
     return character_intro
