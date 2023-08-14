@@ -26,3 +26,5 @@ cd XDDWriter
 python manage.py runserver 0.0.0.0:8000
 ```
 
+Try [demo](http://70.34.197.244:8000/) here.
+
